@@ -1,0 +1,23 @@
+ydlidar_ros2_driver_node:
+  ros__parameters:
+    port: /dev/ydlidar1  # 激光雷达连接的串口名称
+    frame_id: laser  # 发布的激光雷达数据的坐标系名称
+    ignore_array: ""  # 忽略的数据区间
+    baudrate: 115200  # 串口波特率
+    lidar_type: 1  # 激光雷达类型，具体含义需查看文档
+    device_type: 0  # 设备类型，具体含义需查看文档
+    sample_rate: 3  # 采样率 orignal is 3
+    abnormal_check_count: 4  # 异常检查次数
+    resolution_fixed: true  # 分辨率是否固定
+    reversion: false  # 是否翻转
+    inverted: true  # 是否反转
+    auto_reconnect: true  # 是否自动重连
+    isSingleChannel: true  # 是否单通道
+    intensity: false  # 是否包含强度信息
+    support_motor_dtr: true  # 是否支持电机DTR
+    angle_max: 180.0  # 激光雷达最大测量角度（度）
+    angle_min: -180.0  # 激光雷达最小测量角度（度）
+    range_max: 64.0  # 激光雷达最大测距范围（米）
+    range_min: 0.01  # 激光雷达最小测距范围（米）
+    frequency: 10.0  # 激光雷达的数据发布频率（赫兹）
+    invalid_range_is_inf: false  # 无效范围是否为无穷大
