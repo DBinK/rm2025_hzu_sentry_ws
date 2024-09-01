@@ -1,8 +1,8 @@
-ydlidar_ros2_driver_node:
+ydlidar_ros2_driver_node_2:
   ros__parameters:
-    port: /dev/ydlidar1
-    frame_id: laser1
-    scan: scan1
+    port: /dev/ydlidar2
+    frame_id: laser2
+    scan: scan2
     ignore_array: ""
     baudrate: 115200
     lidar_type: 1
