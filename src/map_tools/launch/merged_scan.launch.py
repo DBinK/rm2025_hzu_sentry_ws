@@ -6,7 +6,9 @@ from launch_ros.actions import Node
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch.actions import LogInfo
-
+from launch.actions import IncludeLaunchDescription
+from launch.conditions import LaunchConfigurationEquals
+from launch.launch_description_sources import PythonLaunchDescriptionSource,AnyLaunchDescriptionSource
 import lifecycle_msgs.msg
 import os
 
@@ -15,6 +17,15 @@ def generate_launch_description():
 
 
     node_name = 'merger_node'
+
+    lidar_x3_launch = IncludeLaunchDescription(PythonLaunchDescriptionSource(
+        [os.path.join(get_package_share_directory('ydlidar_ros2_driver'), 'launch'),
+        '/x3_ydlidar_launch.py']),
+    )
+    lidar_x3_launch_2 = IncludeLaunchDescription(PythonLaunchDescriptionSource(
+        [os.path.join(get_package_share_directory('ydlidar_ros2_driver'), 'launch'),
+        '/x3_ydlidar_launch.py']),
+    )
 
     merged_scan = LifecycleNode(package='map_tools',
                                 executable='merger_node',
@@ -32,4 +43,7 @@ def generate_launch_description():
     return LaunchDescription([
         merged_scan,
         tf2_node,
+        # lidar_x3_launch,
+        # lidar_x3_launch_2
     ])
+# 两个雷达不能同时启动，报的错误是2雷达的串口加载成默认串口ydlidar

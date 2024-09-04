@@ -9,8 +9,17 @@ find_package(pcl_ros REQUIRED)
 find_package(PCL REQUIRED)
 
 add_executable(merger_node src/laser_scan_merger.cpp)
+add_executable(save_point_cloud src/save_point_cloud.cpp)
 
-ament_target_dependencies(merger_node 
+ament_target_dependencies(merger_node
+  rclcpp 
+  sensor_msgs 
+  laser_geometry 
+  pcl_ros 
+  PCL
+)
+
+ament_target_dependencies(save_point_cloud
   rclcpp 
   sensor_msgs 
   laser_geometry 
@@ -20,6 +29,7 @@ ament_target_dependencies(merger_node
 
 install(TARGETS
   merger_node
+  save_point_cloud
   DESTINATION lib/${PROJECT_NAME})
   
 install(DIRECTORY launch/

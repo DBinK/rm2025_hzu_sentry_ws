@@ -3,6 +3,7 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <laser_geometry/laser_geometry.hpp>
 #include <pcl_conversions/pcl_conversions.h>
+#include <pcl/filters/crop_box.h>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 
@@ -12,12 +13,14 @@ public:
         // 订阅两个 LaserScan 话题
         scan1_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
             "/scan1", 10, std::bind(&LaserScanMerger::scan1Callback, this, std::placeholders::_1));
-
         scan2_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
             "/scan2", 10, std::bind(&LaserScanMerger::scan2Callback, this, std::placeholders::_1));
 
         // 发布合并后的 LaserScan 话题
         scan_pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>("/merged_scan", 10);
+        point_cloud_1_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/point_cloud_1", 10);
+        point_cloud_2_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/point_cloud_2", 10);
+        point_cloud_merged_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/point_cloud_merged", 10);
     }
 
 private:
@@ -32,6 +35,7 @@ private:
     void scan1Callback(const sensor_msgs::msg::LaserScan::SharedPtr scan1) {
         projector_.projectLaser(*scan1, cloud1_);  // 将 LaserScan 转换为 PointCloud2
         pcl::fromROSMsg(cloud1_, *pcl_cloud1_);    // 将 PointCloud2 转换为 PCL 点云
+        point_cloud_1_pub_->publish(cloud1_);
         transformPointCloud(pcl_cloud1_, -0.23, 0.0, 0.0); // 对点云进行平移变换，x轴向左平移23cm
         mergeAndPublish();                         // 尝试合并点云并发布
     }
@@ -40,6 +44,7 @@ private:
     void scan2Callback(const sensor_msgs::msg::LaserScan::SharedPtr scan2) {
         projector_.projectLaser(*scan2, cloud2_);  // 将 LaserScan 转换为 PointCloud2
         pcl::fromROSMsg(cloud2_, *pcl_cloud2_);    // 将 PointCloud2 转换为 PCL 点云
+        point_cloud_2_pub_->publish(cloud2_);
         //transformPointCloud(pcl_cloud1_, 0.23, 0.0, 0.0); // 对点云进行平移变换，x轴向右平移23cm
         mergeAndPublish();                         // 尝试合并点云并发布
     }
@@ -50,14 +55,34 @@ private:
             //RCLCPP_WARN(this->get_logger(), "One or both point clouds are empty, skipping merge.");
             return;  // 等待两个点云都接收到后再合并
         }
-        RCLCPP_INFO(this->get_logger(), "Point Cloud1 size: %zu", pcl_cloud1_->size());
-        RCLCPP_INFO(this->get_logger(), "Point Cloud2 size: %zu", pcl_cloud2_->size());
+        //RCLCPP_INFO(this->get_logger(), "Point Cloud1 size: %zu", pcl_cloud1_->size());
+        //RCLCPP_INFO(this->get_logger(), "Point Cloud2 size: %zu", pcl_cloud2_->size());
 
         // 合并两个点云
         pcl::PointCloud<pcl::PointXYZ> merged_pcl_cloud;
         merged_pcl_cloud += *pcl_cloud1_;
         merged_pcl_cloud += *pcl_cloud2_;
+
         // 打印合并后点云的大小
+        RCLCPP_INFO(this->get_logger(), "Before filter Point Cloud size: %zu", merged_pcl_cloud.size());
+        
+        //滤波器
+        Eigen::Vector4f min_point(-0.25, -0.15, -1000.0, 1.0); // 正方形的最小点 (x_min, y_min, z_min)
+        Eigen::Vector4f max_point(0.05, 0.15, 1000.0, 1.0);    // 正方形的最大点 (x_max, y_max, z_max)
+
+        // 创建CropBox滤波器
+        pcl::CropBox<pcl::PointXYZ> crop_box_filter;
+        crop_box_filter.setInputCloud(merged_pcl_cloud.makeShared());
+        crop_box_filter.setMin(min_point);
+        crop_box_filter.setMax(max_point);
+        crop_box_filter.setNegative(true); // 设置为true以保留不在正方形区域内的点
+
+        // 过滤点云
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
+        crop_box_filter.filter(merged_pcl_cloud);
+
+
+        // 打印点云的大小
         RCLCPP_INFO(this->get_logger(), "Merged Point Cloud size: %zu", merged_pcl_cloud.size());
 
         // 将合并后的点云转换回 PointCloud2
@@ -65,10 +90,12 @@ private:
         pcl::toROSMsg(merged_pcl_cloud, merged_cloud_msg);
         merged_cloud_msg.header = cloud1_.header;  // 保持与第一个点云的时间戳和坐标系一致
 
+        point_cloud_merged_pub_->publish(merged_cloud_msg);
         // 将合并后的 PointCloud2 转换为 LaserScan
         sensor_msgs::msg::LaserScan merged_scan;
         pointcloudToLaserScan(merged_cloud_msg, merged_scan);
         merged_scan.header.frame_id = "merged_laser";
+        
         // 发布合并后的 LaserScan
         scan_pub_->publish(merged_scan);
         RCLCPP_INFO(this->get_logger(), "publish merged_scan");
@@ -108,6 +135,9 @@ private:
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr scan1_sub_;
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr scan2_sub_;
     rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_pub_;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_1_pub_;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_2_pub_;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_merged_pub_;
 
     laser_geometry::LaserProjection projector_;
     sensor_msgs::msg::PointCloud2 cloud1_, cloud2_;
