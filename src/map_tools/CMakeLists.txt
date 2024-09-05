@@ -32,7 +32,12 @@ install(TARGETS
   save_point_cloud
   DESTINATION lib/${PROJECT_NAME})
   
+# 安装 launch 目录
 install(DIRECTORY launch/
   DESTINATION share/${PROJECT_NAME}/launch)
+
+# 安装 config 目录中的配置文件
+install(DIRECTORY config/
+  DESTINATION share/${PROJECT_NAME}/config)
 
 ament_package()
