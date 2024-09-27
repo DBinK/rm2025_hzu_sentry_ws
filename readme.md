@@ -43,5 +43,5 @@ colcon build --packages-select map_tools
 <!-- colcon build -->
 
 # 导航 #
-ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=False slam:=False map:=/home/jay/rm2025_hzu_sentry_ws/src/map_tools/maps/slam_map.yaml
+ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=False slam:=False map:=/home/morefine/rm2025_hzu_sentry_ws/src/map_tools/maps/slam_map.yaml
 
