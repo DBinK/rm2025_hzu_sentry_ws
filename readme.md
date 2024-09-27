@@ -45,3 +45,10 @@ colcon build --packages-select map_tools
 # 导航 #
 ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=False slam:=False map:=/home/morefine/rm2025_hzu_sentry_ws/src/map_tools/maps/slam_map.yaml
 
+# 导航数据打包成自定义消息 #
+ros2 run map_tools cmd_vel2serial.py
+
+# 开启串口 #
+ros2 run rm_serial_python rm_serial_node 
+
+
