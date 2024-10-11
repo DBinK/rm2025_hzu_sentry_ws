@@ -19,6 +19,11 @@ ros2 launch rf2o_laser_odometry rf2o_laser_odometry.launch.py
 # 打开amcl #
 ros2 launch map_tools amcl_launch.py
 
+
+# 上发整合版（无amcl）#
+ros2 launch turtlebot3_navigation2 test_all.launch.py
+
+
 # 地图保存 #
 ros2 run nav2_map_server map_saver_cli -t map -f slam_map
 <!-- ros2 run nav2_map_server map_saver_cli -t map -f slam_map --free_threshold 64 --occupied_threshold 165 --image_format pgm -->
